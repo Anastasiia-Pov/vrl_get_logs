@@ -1,0 +1,41 @@
+sources:
+  auth_logs:
+    type: file
+    include:
+      - /var/log/auth.log
+    data_dir: "/home/<username>/<save_dir>"
+
+
+transforms:
+  parse_auth_log:
+  # парсим логи с помощью функции parse_linux_authorization! (генерирует ошибку, если парсинг не удался)
+  # если parse_linux_authorization - возвращает null в случае ошибки (ошибка тихо подавляется)
+    inputs:
+      - auth_logs
+    type: remap
+    source:  |
+        . = parse_linux_authorization!(.message)
+  original_auth_log:
+  # возвращаем оригинальные логи в консоль
+    inputs: 
+        - auth_logs
+    type: remap
+    source: |
+        .raw_message = .message
+
+sinks:
+  print:
+    type: console
+    inputs:
+      - original_auth_log
+    encoding:
+      codec: json
+  file_out:
+    type: file
+    inputs:
+      - parse_auth_log
+    path: "/home/<username>/<save_dir>/auth_logs.json"
+    encoding:
+      codec: json
+        
+        
