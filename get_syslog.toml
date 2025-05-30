@@ -1,0 +1,29 @@
+[sources.source_in]
+type = "file"       
+include = ["/var/log/syslog"]                       # путь к файлу логов (/var/log/syslog или /var/log/messages — системные события)
+data_dir = '/home/<username>/vrl_scripts'
+
+[transforms.only_errors]
+type = "filter"
+inputs = ["source_in"]
+condition = 'contains(string!(.message), "error")'  # фильтруем строки, содержащие "error"
+
+[transforms.parse_syslog]
+type = "remap"                                      # парсим события ошибок с помощью функции разбора parse_syslog
+inputs = ["only_errors"]                            # с помощью merge добавляем распарсенные данные в основной объект
+source = '''
+parsed = parse_syslog!(.message)            
+. = merge(., parsed)
+'''                                                 
+
+[sinks.print_out]
+type = "console"
+inputs = ["parse_syslog"]
+encoding.codec = "json"                             # выводим в формате JSON в консоль
+
+[sinks.file_out]
+type = 'file'
+inputs = ['parse_syslog']
+path = "/home/<username>/vrl_scripts/logs.json"     # Сохраненяем логи в JSON-файл
+encoding.codec = 'json'
+
