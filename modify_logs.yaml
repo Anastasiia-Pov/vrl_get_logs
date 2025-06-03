@@ -1,0 +1,48 @@
+sources:
+  auth_logs:
+    type: file
+    include:
+      - /var/log/auth.log
+    data_dir: "/home/<username>/<save_dir>"
+
+transforms:
+  parse_auth_log:
+    type: remap
+    inputs:
+      - auth_logs
+    source: |
+      . |= parse_linux_authorization!(.message)
+
+  filter_log:
+    type: filter
+    inputs: 
+      - parse_auth_log
+    condition:
+      .appname == "sudo" || .appname == "su"
+
+  modify:
+    type: remap
+    inputs:
+      - filter_log
+    source: |
+#удаляем поле appname, добавляем ключ "event_name" со значением "AUTH", и добавляем id в формате uuid_v4
+      del(.appname)         
+      .event_name = "AUTH"
+      .id = uuid_v4()
+      
+sinks:
+  print:
+    type: console
+    inputs:
+      - modify  # Referring to the last transform, which is 'modify'
+    encoding:
+      codec: json
+
+  file_out:
+    type: file
+    inputs:
+      - modify  # Referring to the last transform, which is 'modify'
+    path: "/home/<username>/<save_dir>/auth_logs_sudo.json"
+    encoding:
+      codec: json
+
