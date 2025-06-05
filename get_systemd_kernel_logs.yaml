@@ -1,0 +1,64 @@
+sources:
+  syslogs:
+    type: file
+    # работаем с json-файлом
+    include:
+      - /home/<username>/<save_dir>/new_syslogs_test.json
+    data_dir: "/home/<username>/<save_dir>"
+    read_from: beginning
+    ignore_older: 0
+
+transforms:
+  parse_log_json:
+    type: remap
+    inputs:
+      - syslogs
+    source: |
+      .message = parse_json!(.message)
+
+  get_message:
+    type: filter
+    inputs:
+      - parse_log_json
+    # отбираем только события соответствующие условию в регулярном выражении ниже
+    condition: |
+      (parse_regex(string!(.message.message), r'\w{3}\s+[0-9]{1,2}\s+([0-9]{1,2}:){2}[0-9]{1,2}\s+[a-zA-Z]+\s+(systemd\[[0-9]+\]|kernel)') ?? null) != null
+
+  remap_res:
+    type: remap
+    inputs:
+      - get_message
+    # изменяем структуру результирующего json-a: добавляем .message_clean, .event_name, .id, удаляем .info и .message (которая ранее была разбита в info)
+    source: |
+      if match(string!(.message.message), r'systemd\[[0-9]+\]:') {
+          .info = split(string!(.message.message), r' systemd\[[0-9]+\]: ')
+          .message_clean = .info[1]
+          .event_name = "SYSTEMD"
+          .id = uuid_v4()
+      } else if match(string!(.message.message), r'kernel:') {
+          .info = split(string!(.message.message), r' kernel: ')
+          .message_clean = .info[1]
+          .event_name = "KERNEL"
+          .id = uuid_v4()
+      }
+      del(.info)
+      del(.message)
+
+
+sinks:
+  print:
+    type: console
+    # в консоль выводятся все логи
+    inputs:
+      - syslogs
+    encoding:
+      codec: json
+
+  file_out:
+    type: file
+    # в файл записываются только те логи, которые соответстуют условию выше
+    inputs:
+      - remap_res
+    path: "/home//<username>/<save_dir>/systemd_kernel.json"
+    encoding:
+      codec: json
