@@ -59,6 +59,6 @@ sinks:
     # в файл записываются только те логи, которые соответстуют условию выше
     inputs:
       - remap_res
-    path: "/home//<username>/<save_dir>/systemd_kernel.json"
+    path: "/home/<username>/<save_dir>/systemd_kernel.json"
     encoding:
       codec: json
