@@ -1,0 +1,43 @@
+sources:
+  # читаем первый файл 
+  file1:
+    type: file
+    include:
+      - /home/<username>/<save_dir>/systemd_kernel.json
+    data_dir: "/home/<username>/<save_dir>"
+    read_from: beginning
+
+  file2:
+    # читаем второй файл
+    type: file
+    include:
+      - /home/<username>/<save_dir>/auth_logs_sudo.json
+    data_dir: "/home/<username>/<save_dir>"
+    read_from: beginning
+
+transforms:
+  # объединяем входящие json-объекты
+  parse_json:
+    type: remap
+    inputs: [file1, file2]
+    source: |
+      structured = parse_json!(.message)
+      . = structured
+
+sinks:
+  # выводим результат в консоль
+  print:
+    type: console
+    inputs:
+      - parse_json
+    encoding:
+      codec: json
+
+  file_out:
+    # добавляем события в результирующий файл
+    type: file
+    inputs:
+      - parse_json
+    path: "/home/<username>/<save_dir>/joined_json-files.json"
+    encoding:
+      codec: json
