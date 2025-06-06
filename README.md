@@ -6,3 +6,4 @@
 - [get_authlogs.yaml](https://github.com/Anastasiia-Pov/vrl_get_logs/blob/main/get_authlogs.yaml) - скрипт для чтения логов об авторизации пользователей, и их последующей записи в JSON-файл;
 - [modify_logs.yaml](https://github.com/Anastasiia-Pov/vrl_get_logs/blob/main/modify_logs.yaml) - скрипт для чтения логов об авторизации пользователей, фильтра "sudo/su" событий, добавления ключей "event_name" и "id" со значениями "AUTH" и значения в формате uuidv4, и их последующей записи в JSON-файл;
 - [get_systemd_kernel_logs.yaml](https://github.com/Anastasiia-Pov/vrl_get_logs/blob/main/get_systemd_kernel_logs.yaml) - фильтр syslogs, получение только systemd и kernel логов, remap итогового json;
+- [join_json_files.yaml](https://github.com/Anastasiia-Pov/vrl_get_logs/blob/main/join_json_files.yaml) - объединяем два json-файла;
